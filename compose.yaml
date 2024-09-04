@@ -1,0 +1,78 @@
+name: talos-workshop
+
+networks:
+  talos-workshop:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.0.0/24"
+          gateway: "172.20.0.1"
+
+volumes:
+  # ControlPlane
+  cp_var:
+  cp_etc-cni:
+  cp_etc-kubernetes:
+  cp_usr-libexec-kubernetes:
+  cp_opt:
+  cp_system-state:
+
+  # Worker
+  worker_var:
+  worker_etc-cni:
+  worker_etc-kubernetes:
+  worker_usr-libexec-kubernetes:
+  worker_opt:
+  worker_system-state:
+
+
+services:
+  talos-cp:
+    image: ghcr.io/siderolabs/talos:v1.7.4
+    hostname: talos-cp
+    container_name: talos-cp
+    environment:
+      - PLATFORM=container
+    read_only: true
+    privileged: true
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      - cp_var:/var
+      - cp_etc-cni:/etc/cni
+      - cp_etc-kubernetes:/etc/kubernetes
+      - cp_usr-libexec-kubernetes:/usr/libexec/kubernetes
+      - cp_opt:/opt
+      - cp_system-state:/system/state
+    tmpfs:
+      - /run
+      - /system
+      - /tmp
+    networks:
+      talos-workshop:
+        ipv4_address: 172.20.0.100
+
+  talos-worker:
+    image: ghcr.io/siderolabs/talos:v1.7.4
+    hostname: talos-worker
+    container_name: talos-worker
+    environment:
+      - PLATFORM=container
+    read_only: true
+    privileged: true
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      - worker_var:/var
+      - worker_etc-cni:/etc/cni
+      - worker_etc-kubernetes:/etc/kubernetes
+      - worker_usr-libexec-kubernetes:/usr/libexec/kubernetes
+      - worker_opt:/opt
+      - worker_system-state:/system/state
+    tmpfs:
+      - /run
+      - /system
+      - /tmp
+    networks:
+      talos-workshop:
+        ipv4_address: 172.20.0.150

@@ -1,0 +1,4 @@
+talosconfig
+controlplane.yaml
+worker.yaml
+patch-docker.yaml

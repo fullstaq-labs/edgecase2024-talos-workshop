@@ -10,7 +10,9 @@
       "minikube": "none",
       "helm": "none"
     },
-    "ghcr.io/devcontainers-contrib/features/go-task:1": {},
+    "ghcr.io/devcontainers-contrib/features/go-task:1": {
+      "version": "v3.38.0"
+    },
     "ghcr.io/devcontainers-contrib/features/bash-command:1": {
       "command": "docker completion bash > /etc/bash_completion.d/docker"
     }

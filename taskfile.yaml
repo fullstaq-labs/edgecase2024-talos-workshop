@@ -5,10 +5,10 @@ interval: 1s
 tasks:
   default: task --list
 
-  01_start-talos:
+  start-talos:
     silent: true
     desc: "Start the Talos docker containers"
-    aliases: [up]
+    aliases: [up, 01]
     cmds:
     - gum spin --show-error --title="Starting Talos containers..." -- docker-compose up -d
     - gum log --level=info "Talos containers started"
@@ -21,9 +21,10 @@ tasks:
     - gum spin --show-error --title="Stopping Talos containers..." -- docker-compose down
     - gum log --level=info "Talos containers stopped"
 
-  02_gen-config:
+  gen-config:
     silent: true
     desc: "Generate Talos config with the IP Address of the talos-cp container and Kubernetes version 1.29.7"
+    aliases: [02]
     cmds:
     - gum spin --show-error --title="Generate Talos Config..." -- talosctl gen config workshop https://{{.IP_CP}}:6443 --with-docs=false --with-examples=false --kubernetes-version=1.29.7 --force
     - gum log --level=info "Talos configuration created"
@@ -31,9 +32,10 @@ tasks:
       IP_CP:
         sh: docker inspect talos-cp | jq -r '.[].NetworkSettings.Networks."talos-workshop_talos-workshop".IPAddress'
 
-  03_update-talosconfig:
+  update-talosconfig:
     silent: true
     desc: "Updates the talosconfig with the IP Address of the talos-cp container"
+    aliases: [03]
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
@@ -46,9 +48,10 @@ tasks:
       IP_CP:
         sh: docker inspect talos-cp | jq -r '.[].NetworkSettings.Networks."talos-workshop_talos-workshop".IPAddress'
 
-  04_docker-patch:
+  docker-patch:
     silent: true
     desc: "Creates a patch file for Talos to run in Docker"
+    aliases: [04]
     cmds:
     - |
       gum spin --show-error --title="Creating Talos patch for Docker..." -- \
@@ -58,9 +61,10 @@ tasks:
             forwardKubeDNSToHost: true" > patch-docker.yaml
     - gum log --level=info "Talos config patch for Docker created"
 
-  05_apply-config:
+  apply-config:
     silent: true
     desc: "Applies the Talos config to both containers 'talos-cp, talos-worker' based on there IP Address"
+    aliases: [05]
     cmds:
     - gum spin --show-error --title="Applying Talos Controlplane config..." -- sleep 5 && talosctl apply-config -f controlplane.yaml -n {{.IP_CP}} -p @patch-docker.yaml --insecure
     - gum log --level=info "Talos Controlplane config applied on {{.IP_CP}}"
@@ -72,9 +76,10 @@ tasks:
       IP_WRK:
         sh: docker inspect talos-worker | jq -r '.[].NetworkSettings.Networks."talos-workshop_talos-workshop".IPAddress'
 
-  06_bootstrap:
+  bootstrap:
     silent: true
     desc: "Bootstrap your Talos cluster"
+    aliases: [06]
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
@@ -83,9 +88,10 @@ tasks:
     - gum spin --show-error --title="Bootstrapping Talos cluster..." -- talosctl bootstrap
     - talosctl health
 
-  07_kubeconfig:
+  kubeconfig:
     silent: true
     desc: "Get kubeconfig file from your Talos cluster"
+    aliases: [07]
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
@@ -96,9 +102,10 @@ tasks:
 
 ##################################
 
-  08_upgrade-talos:
+  upgrade-talos:
     silent: true
     desc: "Upgrade your Talos version to 1.7.6"
+    aliases: [08]
     env:
       TALOS_VERSION: 1.7.6
     cmds:
@@ -113,21 +120,24 @@ tasks:
         docker compose up -d talos-worker && gum log --level=info "Waiting for the Worker node to be Ready..." && while ! kubectl get nodes talos-worker -o jsonpath='{.status.nodeInfo.osImage}' 2> /dev/null | grep -q $TALOS_VERSION; do sleep 5; done
       - gum log --level=info "Upgrade of Worker completed!" 
 
-  09_upgrade-k8s:
+  upgrade-k8s:
     silent: true
     desc: "Upgrade Kubernetes to version '1.30.3, 1.30.2, 1.30.1 or 1.30.0'"
+    aliases: [09]
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
+      - clear
+      - echo "To which Kubernetes version do you want to upgrade?"
       - |
-        echo "To which Kubernetes version do you want to upgrade?"
-        K8S_VERSION=$(gum choose "1.30.3" "1.30.2" "1.30.1" "1.30.0")
-        gum log --level=info "Started Kubernetes upgrade $K8S_VERSION"
+        K8S_VERSION=$(gum choose "1.30.3" "1.30.2" "1.30.1" "1.30.0") && \
+        gum log --level=info "Started Kubernetes upgrade $K8S_VERSION" && \
         talosctl upgrade-k8s --to=$K8S_VERSION
 
-  10_workload:
+  workload:
     silent: true
     desc: "Run workload"
+    aliases: [10]
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
@@ -137,15 +147,33 @@ tasks:
 
 ##################################
 
-  98_reset:
+  one-click-setup:
+    silent: true
+    desc: "Create a Talos cluster with one command"
+    aliases: [ocs,aio,50]
+    cmds:
+      - clear
+      - gum confirm --default "Are you sure you want to use the One-Click-Setup? This will RESET your Talos Workshop environment?"
+      - task: reset-yolo
+      - task: start-talos
+      - task: gen-config
+      - task: update-talosconfig   
+      - task: docker-patch
+      - task: apply-config
+      - task: bootstrap
+      - task: kubeconfig
+
+  reset:
     silent: true
     desc: "Reset the Talos-Workshop with confimation"
+    aliases: [98]
     cmds:
       - gum confirm --default "Are you sure you want to RESET your Talos Workshop environment?" && task reset-yolo || exit 0
 
   reset-yolo:
     silent: true
     desc: "Reset the Talos-Workshop without confimation"
+    aliases: [99]
     cmds:
       - task: stop-talos
       - gum spin --title="Deleting Docker volumes..." -- docker volume rm $(docker volume ls --filter=name=talos -q) || true
@@ -155,19 +183,4 @@ tasks:
       - gum spin --show-error --title="Deleting Talos config..." -- rm -rf talosconfig controlplane.yaml worker.yaml patch-docker.yaml
       - gum log --level=info "Talos configuration deleted"
 
-  99_one-click-setup:
-    silent: true
-    desc: "Create a Talos cluster with one command"
-    aliases: [ocs,aio]
-    cmds:
-    - |
-      gum confirm --default "Are you sure you want to use the One-Click-Setup? This will RESET your Talos Workshop environment?" && \
-      task: reset-yolo && \
-      task: 01_start-talos && \
-      task: 02_gen-config && \
-      task: 03_update-talosconfig && \      
-      task: 04_docker-patch && \
-      task: 05_apply-config && \
-      task: 06_bootstrap && \
-      task: 07_kubeconfig || exit 0
       

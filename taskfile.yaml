@@ -10,6 +10,7 @@ tasks:
     desc: "Start the Talos docker containers"
     aliases: [up, 01]
     cmds:
+    - clear
     - gum spin --show-error --title="Starting Talos containers..." -- docker-compose up -d
     - gum log --level=info "Talos containers started"
 
@@ -18,6 +19,7 @@ tasks:
     aliases: [down]
     desc: "Stop the Talos docker containers"
     cmds:
+    - clear
     - gum spin --show-error --title="Stopping Talos containers..." -- docker-compose down
     - gum log --level=info "Talos containers stopped"
 
@@ -26,6 +28,7 @@ tasks:
     desc: "Generate Talos config with the IP Address of the talos-cp container and Kubernetes version 1.29.7"
     aliases: [02]
     cmds:
+    - clear
     - gum spin --show-error --title="Generate Talos Config..." -- talosctl gen config workshop https://{{.IP_CP}}:6443 --with-docs=false --with-examples=false --kubernetes-version=1.29.7 --force
     - gum log --level=info "Talos configuration created"
     vars:
@@ -39,6 +42,7 @@ tasks:
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
+    - clear
     - gum log --level=info "Updating talosconfig file"
     - talosctl config endpoint {{.IP_CP}}
     - gum log --level=info "Added {{.IP_CP}} to the endpoint list"
@@ -53,6 +57,7 @@ tasks:
     desc: "Creates a patch file for Talos to run in Docker"
     aliases: [04]
     cmds:
+    - clear
     - |
       gum spin --show-error --title="Creating Talos patch for Docker..." -- \
       echo "machine:
@@ -66,6 +71,7 @@ tasks:
     desc: "Applies the Talos config to both containers 'talos-cp, talos-worker' based on there IP Address"
     aliases: [05]
     cmds:
+    - clear
     - gum spin --show-error --title="Applying Talos Controlplane config..." -- sleep 5 && talosctl apply-config -f controlplane.yaml -n {{.IP_CP}} -p @patch-docker.yaml --insecure
     - gum log --level=info "Talos Controlplane config applied on {{.IP_CP}}"
     - gum spin --show-error --title="Applying Talos Worker config..." -- talosctl apply-config -f worker.yaml -n {{.IP_WRK}} -p @patch-docker.yaml --insecure
@@ -83,6 +89,7 @@ tasks:
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
+    - clear
     - gum spin --show-error --title="Waiting for Talos cluster to accept the bootstrap command..." -- sleep 10
     - gum log --level=info "Talos cluster ready. Start bootstrap."
     - gum spin --show-error --title="Bootstrapping Talos cluster..." -- talosctl bootstrap
@@ -95,6 +102,7 @@ tasks:
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
+    - clear
     - gum log --level=info "Downloading kubeconfig"
     - talosctl kubeconfig --force
     - gum log --level=info "Kubeconfig downloaded"
@@ -109,6 +117,7 @@ tasks:
     env:
       TALOS_VERSION: 1.7.6
     cmds:
+      - clear
       - gum log --level=info "Changing Talos version to $TALOS_VERSION"
       - sed -i 's/1.7.4/'"$TALOS_VERSION"'/g' compose.yaml 
       - |
@@ -141,6 +150,7 @@ tasks:
     env:
       TALOSCONFIG: ./talosconfig
     cmds:
+      - clear
       - |
         gum log --level=info "Applying Workshop manifest"
         kubectl apply -f ./workload
@@ -168,6 +178,7 @@ tasks:
     desc: "Reset the Talos-Workshop with confimation"
     aliases: [98]
     cmds:
+      - clear
       - gum confirm --default "Are you sure you want to RESET your Talos Workshop environment?" && task reset-yolo || exit 0
 
   reset-yolo:
@@ -175,6 +186,7 @@ tasks:
     desc: "Reset the Talos-Workshop without confimation"
     aliases: [99]
     cmds:
+      - clear
       - task: stop-talos
       - gum spin --title="Deleting Docker volumes..." -- docker volume rm $(docker volume ls --filter=name=talos -q) || true
       - gum log --level=info "Docker volumes deleted"

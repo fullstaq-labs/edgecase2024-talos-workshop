@@ -1,4 +1,12 @@
 {
+  "forwardPorts": [
+    30080
+  ],
+  "portsAttributes": {
+    "30080": {
+      "label": "Workshop"
+    }
+  },
   "build": {
     "context": "..",
     "dockerfile": "Dockerfile"

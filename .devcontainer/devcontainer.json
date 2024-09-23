@@ -1,0 +1,31 @@
+{
+  "forwardPorts": [
+    30080
+  ],
+  "portsAttributes": {
+    "30080": {
+      "label": "Workshop"
+    }
+  },
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/rio/features/k9s": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "minikube": "none",
+      "helm": "none"
+    },
+    "ghcr.io/devcontainers-contrib/features/go-task:1": {
+      "version": "v3.38.0"
+    },
+    "ghcr.io/devcontainers-contrib/features/bash-command:1": {
+      "command": "docker completion bash > /etc/bash_completion.d/docker"
+    }
+  },
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/docker-in-docker:2"
+  ]
+}

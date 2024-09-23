@@ -1,0 +1,14 @@
+#!/bin/bash
+
+CP_VERSION=$(kubectl get nodes talos-cp -o jsonpath='{.status.nodeInfo.osImage}' 2>/dev/null)
+WRK_VERSION=$(kubectl get nodes talos-worker -o jsonpath='{.status.nodeInfo.osImage}' 2>/dev/null)
+
+if [ -z "$CP_VERSION" ]; then
+  echo "Control-Plane: Unknown"
+  echo "Worker:        Unknown"
+  exit 0
+fi
+
+echo "Control-Plane: $CP_VERSION"
+echo "Worker:        $WRK_VERSION"
+exit 0
